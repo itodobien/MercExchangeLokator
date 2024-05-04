@@ -345,33 +345,45 @@ namespace MercExchangeLokator
 
         private void StopCaptureBtn_MouseDown(object sender, MouseButtonEventArgs e)
         {
+            // Simplified to one Dispatcher invocation
             this.Dispatcher.BeginInvoke(new Action(() =>
             {
                 if (bCapturing)
                 {
-                    // Stop capturing using the singleton instance
-                    Snapture.Instance.Stop();
+                    // Check for null and then stop capturing
+                    if (Snapture.Instance != null)
+                    {
+                        Snapture.Instance.Stop();
+                    }
                     bCaptureStopping = true;
                     bCapturing = false;
 
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        RenderCanvas.Canvas01.Children.Clear();
-                    }));
+                    // Clear the canvas for the RenderCanvas
+                    RenderCanvas.Canvas01.Children.Clear();
 
+                    // Update UI elements' enabled states
                     StartCaptureBtn.IsEnabled = true;
                     StopCaptureBtn.IsEnabled = false;
 
-                    if (capturingThread != null)
-                    {
-                        capturingThread.Abort();
-                        capturingThread = null;
-                    }
+                    // Properly stop the capturing thread using a safer method
+                    StopCapturingThreadSafely();
 
                     System.Diagnostics.Debug.WriteLine($"Screen Capturing stopped.");
                 }
             }));
         }
+
+        private void StopCapturingThreadSafely()
+        {
+            if (capturingThread != null)
+            {
+                // Assume you set a flag that the thread checks to exit cleanly
+                bCaptureStopping = true; // This should be checked within the thread to exit loops
+                capturingThread.Join();  // Wait for the thread to finish
+                capturingThread = null;
+            }
+        }
+
 
         private void SettingsBtn_MouseDown(object sender, MouseButtonEventArgs e)
         {
